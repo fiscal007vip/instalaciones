@@ -96,9 +96,6 @@
         .action-btn:hover {
             background: #3f3f3f;
         }
-        .action-btn.liked {
-            color: #3ea6ff;
-        }
         
         /* Comentarios */
         .comments-section {
@@ -112,11 +109,6 @@
             margin-bottom: 10px;
             font-size: 14px;
             color: #aaa;
-        }
-        .admin-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
         }
         .admin-login-btn {
             background: #272727;
@@ -224,9 +216,7 @@
             <div class="comments-section">
                 <div class="comments-header">
                     <span>Comentarios (<span id="commentCount-1">0</span>)</span>
-                    <div class="admin-controls">
-                        <button id="adminBtn" class="admin-login-btn" onclick="pedirCodigoAdmin()">🔑 Código 007</button>
-                    </div>
+                    <button id="adminBtn" class="admin-login-btn" onclick="pedirCodigoAdmin()">🔑 Código 007</button>
                 </div>
                 <div class="comment-input-box">
                     <input type="text" id="nombreUser-1" placeholder="Tu nombre...">
@@ -289,7 +279,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FUNCIONAMIENTO LOCAL Y NUBE -->
+    <!-- SCRIPT DE SINCRONIZACIÓN -->
     <script>
         const BIN_ID = "6abf3053ac6210605a0b2fcb";
         const API_KEY = "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";
@@ -300,7 +290,7 @@
         };
         
         let esAdmin = localStorage.getItem('fiscal_admin_logged') === 'true';
-        let miIdUsuario = localStorage.getItem('fiscal_user_id') || 'user_' + Math.random().toString(36.substr(2, 9));
+        let miIdUsuario = localStorage.getItem('fiscal_user_id') || 'user_' + Math.random().toString(36).substr(2, 9);
         localStorage.setItem('fiscal_user_id', miIdUsuario);
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -308,50 +298,51 @@
             cargarDatosNube();
         });
 
-        function cargarDatosNube() {
-            // Carga instantánea local primero para evitar retrasos
-            let localGuardado = localStorage.getItem('fiscal_datos_locales');
-            if(localGuardado) {
-                datosGlobales = JSON.parse(localGuardado);
+        async function cargarDatosNube() {
+            try {
+                let respuesta = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                let resultado = await respuesta.json();
+                if (resultado && resultado.record) {
+                    datosGlobales = resultado.record;
+                }
+            } catch (error) {
+                console.log("Usando almacenamiento local de respaldo.");
+                let localRespaldo = localStorage.getItem('fiscal_datos_seguros');
+                if (localRespaldo) {
+                    datosGlobales = JSON.parse(localRespaldo);
+                }
             }
             renderizarTodo();
-
-            // Intento de actualización desde la nube
-            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                headers: { 'X-Master-Key': API_KEY }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.record && data.record.video1) {
-                    datosGlobales = data.record;
-                    localStorage.setItem('fiscal_datos_locales', JSON.stringify(datosGlobales));
-                    renderizarTodo();
-                }
-            })
-            .catch(err => console.log("Usando modo local sin conexión directa a JsonBin."));
         }
 
-        function guardarDatosNube() {
-            localStorage.setItem('fiscal_datos_locales', JSON.stringify(datosGlobales));
+        async function guardarDatosNube() {
+            // Guardado local inmediato para que la pantalla responda al instante sin lag
+            localStorage.setItem('fiscal_datos_seguros', JSON.stringify(datosGlobales));
             renderizarTodo();
 
-            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': API_KEY
-                },
-                body: JSON.stringify(datosGlobales)
-            }).catch(err => console.log("Guardado local realizado correctamente."));
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(datosGlobales)
+                });
+            } catch (error) {
+                console.log("Error al sincronizar con la nube, guardado localmente.");
+            }
         }
 
         function renderizarTodo() {
-            document.getElementById('likeCount-1').innerText = datosGlobales.video1.likes;
-            document.getElementById('commentCount-1').innerText = datosGlobales.video1.comentarios.length;
+            document.getElementById('likeCount-1').innerText = datosGlobales.video1.likes || 0;
+            document.getElementById('commentCount-1').innerText = datosGlobales.video1.comentarios ? datosGlobales.video1.comentarios.length : 0;
             renderizarListaComentarios('video1', datosGlobales.video1.comentarios, 'listaComentarios-1');
 
-            document.getElementById('likeCount-2').innerText = datosGlobales.video2.likes;
-            document.getElementById('commentCount-2').innerText = datosGlobales.video2.comentarios.length;
+            document.getElementById('likeCount-2').innerText = datosGlobales.video2.likes || 0;
+            document.getElementById('commentCount-2').innerText = datosGlobales.video2.comentarios ? datosGlobales.video2.comentarios.length : 0;
             renderizarListaComentarios('video2', datosGlobales.video2.comentarios, 'listaComentarios-2');
         }
 
@@ -384,6 +375,9 @@
         }
 
         function darLike(videoId) {
+            if (!datosGlobales[videoId]) {
+                datosGlobales[videoId] = { likes: 0, comentarios: [] };
+            }
             datosGlobales[videoId].likes++;
             guardarDatosNube();
         }
@@ -408,7 +402,7 @@
                 esAdmin: esAdmin
             };
 
-            if(!datosGlobales[videoId].comentarios) {
+            if (!datosGlobales[videoId].comentarios) {
                 datosGlobales[videoId].comentarios = [];
             }
 
@@ -418,7 +412,7 @@
         }
 
         function eliminarComentario(videoId, index) {
-            if (confirm("¿Seguro que deseas eliminar este comentario?")) {
+            if (confirm("¿Estás seguro de eliminar este comentario?")) {
                 datosGlobales[videoId].comentarios.splice(index, 1);
                 guardarDatosNube();
             }
@@ -458,7 +452,7 @@
         function actualizarBotonAdminUI() {
             let btn = document.getElementById('adminBtn');
             if (esAdmin) {
-                btn.innerText = "🛡️ Admin Activo (Salir)";
+                btn.innerText = "🛡️ Admin Activo";
                 btn.classList.add('active');
             } else {
                 btn.innerText = "🔑 Código 007";
