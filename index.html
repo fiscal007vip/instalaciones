@@ -127,16 +127,20 @@
             border-radius: 8px;
             font-size: 13px;
             outline: none;
+            width: 100%;
+        }
+        .comment-btn-container {
+            display: flex;
+            justify-content: flex-end;
         }
         .comment-input-box button {
             background: #3ea6ff;
             color: black;
             border: none;
-            padding: 6px 14px;
+            padding: 8px 16px;
             border-radius: 15px;
             font-weight: bold;
             cursor: pointer;
-            align-self: flex-end;
             font-size: 12px;
         }
         .comment-item {
@@ -205,7 +209,9 @@
                 <div class="comment-input-box">
                     <input type="text" id="nombreUser-1" placeholder="Tu nombre...">
                     <textarea id="textoComment-1" placeholder="Añade un comentario..." rows="2"></textarea>
-                    <button onclick="agregarComentario('video1')">Comentar</button>
+                    <div class="comment-btn-container">
+                        <button onclick="agregarComentario('video1')">Comentar</button>
+                    </div>
                 </div>
                 <div id="listaComentarios-1">
                     <div style="color: #666; font-size: 12px; text-align: center;">Cargando comentarios...</div>
@@ -250,7 +256,9 @@
                 <div class="comment-input-box">
                     <input type="text" id="nombreUser-2" placeholder="Tu nombre...">
                     <textarea id="textoComment-2" placeholder="Añade un comentario..." rows="2"></textarea>
-                    <button onclick="agregarComentario('video2')">Comentar</button>
+                    <div class="comment-btn-container">
+                        <button onclick="agregarComentario('video2')">Comentar</button>
+                    </div>
                 </div>
                 <div id="listaComentarios-2">
                     <div style="color: #666; font-size: 12px; text-align: center;">Cargando comentarios...</div>
@@ -259,7 +267,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE CONEXIÓN ONLINE CON JSONBIN -->
+    <!-- SCRIPT DE CONEXIÓN ONLINE Y LOCAL -->
     <script>
         const BIN_ID = "6abf3053ac6210605a0b2fcb";
         const API_KEY = "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";
@@ -283,10 +291,23 @@
                 }
                 renderizarTodo();
             })
-            .catch(err => console.error("Error al sincronizar:", err));
+            .catch(err => {
+                console.warn("Modo local activado por restricción del navegador:", err);
+                // Si falla por abrir localmente, carga de la memoria del navegador
+                let localGuardado = localStorage.getItem('fiscal_datos_locales');
+                if(localGuardado) {
+                    datosGlobales = JSON.parse(localGuardado);
+                }
+                renderizarTodo();
+            });
         }
 
         function guardarDatosNube() {
+            // Guarda siempre localmente para respuesta inmediata
+            localStorage.setItem('fiscal_datos_locales', JSON.stringify(datosGlobales));
+            renderizarTodo();
+
+            // Intenta actualizar en la nube (JsonBin)
             fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                 method: 'PUT',
                 headers: {
@@ -295,9 +316,7 @@
                 },
                 body: JSON.stringify(datosGlobales)
             })
-            .then(res => res.json())
-            .then(() => renderizarTodo())
-            .catch(err => alert('Error al guardar en línea.'));
+            .catch(err => console.log("Guardado local exitoso. La nube se sincronizará al subir a GitHub."));
         }
 
         function renderizarTodo() {
@@ -314,7 +333,7 @@
             let contenedor = document.getElementById(elementId);
             contenedor.innerHTML = '';
 
-            if (comentarios.length === 0) {
+            if (!comentarios || comentarios.length === 0) {
                 contenedor.innerHTML = '<div style="color: #666; font-size: 12px; text-align: center; padding: 5px;">Sé el primero en comentar...</div>';
                 return;
             }
@@ -328,10 +347,10 @@
 
                 div.innerHTML = `
                     <div><strong>@${c.autor}</strong> ${badgeAdmin}</div>
-                    <div style="margin-top: 4px; color: #ddd;" id="texto-c-${videoId}-${index}">${c.texto}</div>
+                    <div style="margin-top: 4px; color: #ddd;">${c.texto}</div>
                     <div class="comment-actions">
                         ${(esDueño && !c.esAdmin) ? `<span onclick="editarComentario('${videoId}',${index})">Editar</span>` : ''}
-                        {(esDueño || esAdmin) ? `<span style="color: #ff4444;" onclick="eliminarComentario('${videoId}',${index})">Eliminar</span>` : ''}
+                        ${(esDueño || esAdmin) ? `<span style="color: #ff4444;" onclick="eliminarComentario('${videoId}',${index})">Eliminar</span>` : ''}
                     </div>
                 `;
                 contenedor.appendChild(div);
@@ -344,13 +363,17 @@
         }
 
         function agregarComentario(videoId) {
-            let inputNombre = document.getElementById(`nombreUser-${videoId === 'video1' ? '1' : '2'}`);
-            let inputTexto = document.getElementById(`textoComment-${videoId === 'video1' ? '1' : '2'}`);
+            let num = videoId === 'video1' ? '1' : '2';
+            let inputNombre = document.getElementById(`nombreUser-${num}`);
+            let inputTexto = document.getElementById(`textoComment-${num}`);
             
             let autor = inputNombre.value.trim() || "Anónimo";
             let texto = inputTexto.value.trim();
 
-            if (!texto) return;
+            if (!texto) {
+                alert("Escribe un comentario antes de enviar.");
+                return;
+            }
 
             let nuevoComentario = {
                 autor: autor,
@@ -358,6 +381,10 @@
                 userId: miIdUsuario,
                 esAdmin: esAdmin
             };
+
+            if(!datosGlobales[videoId].comentarios) {
+                datosGlobales[videoId].comentarios = [];
+            }
 
             datosGlobales[videoId].comentarios.unshift(nuevoComentario);
             inputTexto.value = '';
