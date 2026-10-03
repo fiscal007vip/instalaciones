@@ -1,974 +1,671 @@
-<script>
-
-const BIN_ID = "6abf3053ac6210605a0b2fcb";
-
-const API_KEY =
-    "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";
-
-
-/* =========================
-   DATOS INICIALES
-========================= */
-
-let datosGlobales = {
-    video1: { comentarios: [] },
-    video2: { comentarios: [] },
-    video3: { comentarios: [] }
-};
-
-
-let esAdmin =
-    localStorage.getItem("fiscal_admin_logged") === "true";
-
-
-/* =========================
-   INICIO
-========================= */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    actualizarEstadoAdminUI();
-
-    cargarDatosNube();
-
-});
-
-
-/* =========================
-   ESTRUCTURA DE DATOS
-========================= */
-
-function asegurarDatos() {
-
-    if (!datosGlobales ||
-        typeof datosGlobales !== "object") {
-
-        datosGlobales = {};
-
-    }
-
-
-    if (!datosGlobales.video1) {
-
-        datosGlobales.video1 = {
-            comentarios: []
-        };
-
-    }
-
-
-    if (!Array.isArray(datosGlobales.video1.comentarios)) {
-
-        datosGlobales.video1.comentarios = [];
-
-    }
-
-
-    if (!datosGlobales.video2) {
-
-        datosGlobales.video2 = {
-            comentarios: []
-        };
-
-    }
-
-
-    if (!Array.isArray(datosGlobales.video2.comentarios)) {
-
-        datosGlobales.video2.comentarios = [];
-
-    }
-
-
-    if (!datosGlobales.video3) {
-
-        datosGlobales.video3 = {
-            comentarios: []
-        };
-
-    }
-
-
-    if (!Array.isArray(datosGlobales.video3.comentarios)) {
-
-        datosGlobales.video3.comentarios = [];
-
-    }
-
-}
-
-
-/* =========================
-   CARGAR DATOS
-========================= */
-
-async function cargarDatosNube() {
-
-    let cargadoDesdeNube = false;
-
-
-    try {
-
-        const respuesta = await fetch(
-            `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,
-            {
-                method: "GET",
-
-                headers: {
-                    "X-Master-Key": API_KEY
-                },
-
-                cache: "no-store"
-            }
-        );
-
-
-        if (!respuesta.ok) {
-
-            throw new Error(
-                "JSONBin respondió: " +
-                respuesta.status
-            );
-
-        }
-
-
-        const resultado =
-            await respuesta.json();
-
-
-        if (
-            resultado &&
-            resultado.record &&
-            typeof resultado.record === "object"
-        ) {
-
-            datosGlobales =
-                resultado.record;
-
-
-            cargadoDesdeNube = true;
-
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            "Error cargando JSONBin:",
-            error
-        );
-
-    }
-
-
-    /*
-     * SI JSONBIN FALLA,
-     * USAMOS EL RESPALDO LOCAL.
-     */
-
-    if (!cargadoDesdeNube) {
-
-        const respaldo =
-            localStorage.getItem(
-                "fiscal_datos_seguros"
-            );
-
-
-        if (respaldo) {
-
-            try {
-
-                const datosLocales =
-                    JSON.parse(respaldo);
-
-
-                if (
-                    datosLocales &&
-                    typeof datosLocales === "object"
-                ) {
-
-                    datosGlobales =
-                        datosLocales;
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Error leyendo respaldo local:",
-                    error
-                );
-
-            }
-
-        }
-
-    }
-
-
-    asegurarDatos();
-
-    renderizarTodo();
-
-}
-
-
-/* =========================
-   GUARDAR DATOS
-========================= */
-
-async function guardarDatosNube() {
-
-    asegurarDatos();
-
-
-    /*
-     * PRIMERO GUARDAMOS LOCALMENTE.
-     * ASÍ NO SE PIERDEN SI HAY UN
-     * PROBLEMA TEMPORAL CON INTERNET.
-     */
-
-    localStorage.setItem(
-        "fiscal_datos_seguros",
-        JSON.stringify(datosGlobales)
-    );
-
-
-    renderizarTodo();
-
-
-    /*
-     * DESPUÉS GUARDAMOS EN JSONBIN.
-     */
-
-    try {
-
-        const respuesta = await fetch(
-            `https://api.jsonbin.io/v3/b/${BIN_ID}`,
-            {
-                method: "PUT",
-
-                headers: {
-                    "Content-Type":
-                        "application/json",
-
-                    "X-Master-Key":
-                        API_KEY,
-
-                    "X-Bin-Versioning":
-                        "true"
-                },
-
-                body:
-                    JSON.stringify(
-                        datosGlobales
-                    )
-            }
-        );
-
-
-        if (!respuesta.ok) {
-
-            const textoError =
-                await respuesta.text();
-
-            throw new Error(
-                "JSONBin " +
-                respuesta.status +
-                ": " +
-                textoError
-            );
-
-        }
-
-
-        console.log(
-            "✅ Comentarios guardados en JSONBin."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "❌ No se pudo guardar en JSONBin:",
-            error
-        );
-
-
-        /*
-         * NO BORRAMOS LOS DATOS.
-         * YA ESTÁN GUARDADOS EN LOCALSTORAGE.
-         */
-
-    }
-
-}
-
-
-/* =========================
-   MOSTRAR TODO
-========================= */
-
-function renderizarTodo() {
-
-    asegurarDatos();
-
-
-    const contador1 =
-        document.getElementById(
-            "commentCount-1"
-        );
-
-    const contador2 =
-        document.getElementById(
-            "commentCount-2"
-        );
-
-    const contador3 =
-        document.getElementById(
-            "commentCount-3"
-        );
-
-
-    if (contador1) {
-
-        contador1.innerText =
-            datosGlobales.video1.comentarios.length;
-
-    }
-
-
-    if (contador2) {
-
-        contador2.innerText =
-            datosGlobales.video2.comentarios.length;
-
-    }
-
-
-    if (contador3) {
-
-        contador3.innerText =
-            datosGlobales.video3.comentarios.length;
-
-    }
-
-
-    renderizarListaComentarios(
-        "video1",
-        "listaComentarios-1"
-    );
-
-
-    renderizarListaComentarios(
-        "video2",
-        "listaComentarios-2"
-    );
-
-
-    renderizarListaComentarios(
-        "video3",
-        "listaComentarios-3"
-    );
-
-}
-
-
-/* =========================
-   MOSTRAR COMENTARIOS
-========================= */
-
-function renderizarListaComentarios(
-    videoId,
-    elementId
-) {
-
-    const contenedor =
-        document.getElementById(
-            elementId
-        );
-
-
-    if (!contenedor) return;
-
-
-    contenedor.innerHTML = "";
-
-
-    const comentarios =
-        datosGlobales[videoId].comentarios;
-
-
-    if (
-        !comentarios ||
-        comentarios.length === 0
-    ) {
-
-        contenedor.innerHTML =
-            `<div class="no-comments">
-                No hay comentarios todavía.
-            </div>`;
-
-        return;
-
-    }
-
-
-    comentarios.forEach(
-        function (comentario, index) {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "comment-item";
-
-
-            const usuario =
-                document.createElement(
-                    "div"
-                );
-
-
-            usuario.innerHTML =
-                `<strong>@Fiscal 007 VIP</strong>
-                 <span class="admin-badge">
-                    Admin
-                 </span>`;
-
-
-            const texto =
-                document.createElement(
-                    "div"
-                );
-
-
-            texto.style.marginTop =
-                "4px";
-
-
-            texto.style.color =
-                "#ddd";
-
-
-            texto.style.wordBreak =
-                "break-word";
-
-
-            /*
-             * textContent evita que alguien
-             * pueda ejecutar HTML/JS mediante
-             * un comentario.
-             */
-
-            texto.textContent =
-                comentario.texto;
-
-
-            div.appendChild(
-                usuario
-            );
-
-
-            div.appendChild(
-                texto
-            );
-
-
-            /*
-             * SOLO ADMIN PUEDE ELIMINAR.
-             */
-
-            if (esAdmin) {
-
-                const acciones =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                acciones.className =
-                    "comment-actions";
-
-
-                const eliminar =
-                    document.createElement(
-                        "span"
-                    );
-
-
-                eliminar.textContent =
-                    "Eliminar";
-
-
-                eliminar.onclick =
-                    function () {
-
-                        eliminarComentario(
-                            videoId,
-                            index
-                        );
-
-                    };
-
-
-                acciones.appendChild(
-                    eliminar
-                );
-
-
-                div.appendChild(
-                    acciones
-                );
-
-            }
-
-
-            contenedor.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-/* =========================
-   ABRIR / CERRAR
-========================= */
-
-function toggleComentarios(
-    videoId
-) {
-
-    let numero = "1";
-
-
-    if (videoId === "video2") {
-
-        numero = "2";
-
-    }
-
-
-    if (videoId === "video3") {
-
-        numero = "3";
-
-    }
-
-
-    const wrapper =
-        document.getElementById(
-            "commentsWrapper-" +
-            numero
-        );
-
-
-    const arrow =
-        document.getElementById(
-            "arrow-" +
-            numero
-        );
-
-
-    if (!wrapper) return;
-
-
-    if (
-        wrapper.classList.contains(
-            "open"
-        )
-    ) {
-
-        wrapper.classList.remove(
-            "open"
-        );
-
-
-        if (arrow) {
-
-            arrow.innerText =
-                "▼";
-
-        }
-
-    } else {
-
-        wrapper.classList.add(
-            "open"
-        );
-
-
-        if (arrow) {
-
-            arrow.innerText =
-                "▲";
-
-        }
-
-    }
-
-}
-
-
-/* =========================
-   PUBLICAR COMENTARIO
-========================= */
-
-function agregarComentario(
-    videoId
-) {
-
-    /*
-     * SOLO ADMIN.
-     */
-
-    if (!esAdmin) {
-
-        alert(
-            "Solo el administrador puede publicar comentarios."
-        );
-
-        return;
-
-    }
-
-
-    let numero = "1";
-
-
-    if (videoId === "video2") {
-
-        numero = "2";
-
-    }
-
-
-    if (videoId === "video3") {
-
-        numero = "3";
-
-    }
-
-
-    const input =
-        document.getElementById(
-            "textoComment-" +
-            numero
-        );
-
-
-    if (!input) return;
-
-
-    const texto =
-        input.value.trim();
-
-
-    if (!texto) {
-
-        alert(
-            "Escribe un comentario antes de publicar."
-        );
-
-        return;
-
-    }
-
-
-    asegurarDatos();
-
-
-    const nuevoComentario = {
-
-        texto: texto,
-
-        fecha:
-            new Date().toLocaleString()
-
-    };
-
-
-    datosGlobales[
-        videoId
-    ].comentarios.unshift(
-        nuevoComentario
-    );
-
-
-    input.value = "";
-
-
-    guardarDatosNube();
-
-}
-
-
-/* =========================
-   ELIMINAR
-========================= */
-
-function eliminarComentario(
-    videoId,
-    index
-) {
-
-    if (!esAdmin) {
-
-        alert(
-            "No tienes permisos."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        !confirm(
-            "¿Seguro que deseas eliminar este comentario?"
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    datosGlobales[
-        videoId
-    ].comentarios.splice(
-        index,
-        1
-    );
-
-
-    guardarDatosNube();
-
-}
-
-
-/* =========================
-   LOGIN ADMIN
-========================= */
-
-function pedirCodigoAdmin() {
-
-    if (esAdmin) {
-
-        const cerrar =
-            confirm(
-                "¿Quieres cerrar la sesión de Administrador?"
-            );
-
-
-        if (cerrar) {
-
-            esAdmin = false;
-
-
-            localStorage.removeItem(
-                "fiscal_admin_logged"
-            );
-
-
-            actualizarEstadoAdminUI();
-
-
-            renderizarTodo();
-
-        }
-
-
-        return;
-
-    }
-
-
-    const codigo =
-        prompt(
-            "Introduce el código de Administrador:"
-        );
-
-
-    if (codigo === "007") {
-
-        esAdmin = true;
-
-
-        localStorage.setItem(
-            "fiscal_admin_logged",
-            "true"
-        );
-
-
-        alert(
-            "🛡️ ¡Modo Administrador activado!"
-        );
-
-
-        actualizarEstadoAdminUI();
-
-
-        renderizarTodo();
-
-    }
-
-    else if (
-        codigo !== null
-    ) {
-
-        alert(
-            "❌ Código incorrecto."
-        );
-
-    }
-
-}
-
-
-/* =========================
-   INTERFAZ ADMIN
-========================= */
-
-function actualizarEstadoAdminUI() {
-
-    const boton =
-        document.getElementById(
-            "adminBtn"
-        );
-
-
-    const cajas = [
-
-        document.getElementById(
-            "adminInputBox-1"
-        ),
-
-        document.getElementById(
-            "adminInputBox-2"
-        ),
-
-        document.getElementById(
-            "adminInputBox-3"
-        )
-
-    ];
-
-
-    if (esAdmin) {
-
-        if (boton) {
-
-            boton.innerText =
-                "🛡️ Admin Activo";
-
-
-            boton.classList.add(
-                "active"
-            );
-
-        }
-
-
-        cajas.forEach(
-            function (caja) {
-
-                if (caja) {
-
-                    caja.classList.add(
-                        "active"
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-    else {
-
-        if (boton) {
-
-            boton.innerText =
-                "🔑 Código 007";
-
-
-            boton.classList.remove(
-                "active"
-            );
-
-        }
-
-
-        cajas.forEach(
-            function (caja) {
-
-                if (caja) {
-
-                    caja.classList.remove(
-                        "active"
-                    );
-
-                }
-
-            }
-        );
-
-    }
-
-}
-
-
-/* =========================
-   COMPARTIR
-========================= */
-
-function compartirWeb() {
-
-    if (
-        navigator.share
-    ) {
-
-        navigator.share({
-
-            title:
-                document.title,
-
-            url:
-                window.location.href
-
-        }).catch(
-            () => {}
-        );
-
-    }
-
-    else {
-
-        navigator.clipboard
-            .writeText(
-                window.location.href
-            )
-            .then(
-                function () {
-
-                    alert(
-                        "🔗 ¡Enlace copiado!"
-                    );
-
-                }
-            );
-
-    }
-
-}
-
-</script>
+<!DOCTYPE html>  
+<html lang="es">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Catálogo y Tutoriales - Fiscal 007 VIP</title>  
+
+<style>  
+    * {  
+        box-sizing: border-box;  
+        margin: 0;  
+        padding: 0;  
+        font-family: Roboto, Arial, sans-serif;  
+    }  
+
+    body {  
+        background: #0f0f0f;  
+        color: #fff;  
+        padding: 20px;  
+        display: flex;  
+        flex-direction: column;  
+        align-items: center;  
+    }  
+
+    .video-container {  
+        width: 100%;  
+        max-width: 500px;  
+        background: #1f1f1f;  
+        border-radius: 12px;  
+        overflow: hidden;  
+        box-shadow: 0 4px 15px rgba(0,0,0,.5);  
+        margin-bottom: 30px;  
+    }  
+
+    .video-wrapper {  
+        position: relative;  
+        width: 100%;  
+        padding-top: 56.25%;  
+        background: #000;  
+    }  
+
+    .video-wrapper video {  
+        position: absolute;  
+        inset: 0;  
+        width: 100%;  
+        height: 100%;  
+        object-fit: contain;  
+    }  
+
+    .video-info {  
+        padding: 16px;  
+    }  
+
+    .video-title {  
+        font-size: 16px;  
+        font-weight: bold;  
+        margin-bottom: 10px;  
+        line-height: 1.4;  
+    }  
+
+    .channel-row {  
+        display: flex;  
+        align-items: center;  
+        justify-content: space-between;  
+        margin-bottom: 12px;  
+    }  
+
+    .channel-details {  
+        display: flex;  
+        align-items: center;  
+        gap: 10px;  
+    }  
+
+    .channel-avatar {  
+        width: 36px;  
+        height: 36px;  
+        border-radius: 50%;  
+        background: #ff0000;  
+        display: flex;  
+        align-items: center;  
+        justify-content: center;  
+        font-weight: bold;  
+        font-size: 14px;  
+    }  
+
+    .actions-row {  
+        display: flex;  
+        gap: 8px;  
+        align-items: center;  
+        margin-bottom: 15px;  
+        flex-wrap: wrap;  
+    }  
+
+    .action-btn {  
+        background: #272727;  
+        border: none;  
+        color: white;  
+        padding: 8px 14px;  
+        border-radius: 20px;  
+        cursor: pointer;  
+        display: flex;  
+        align-items: center;  
+        gap: 6px;  
+        font-size: 13px;  
+        text-decoration: none;  
+    }  
+
+    .action-btn:hover {  
+        background: #3f3f3f;  
+    }  
+
+    /* COMENTARIOS */  
+
+    .comments-section {  
+        border-top: 1px solid #3f3f3f;  
+        padding-top: 12px;  
+    }  
+
+    .comments-toggle-bar {  
+        display: flex;  
+        justify-content: space-between;  
+        align-items: center;  
+        background: #272727;  
+        padding: 12px 14px;  
+        border-radius: 8px;  
+        cursor: pointer;  
+        font-size: 13px;  
+        font-weight: bold;  
+        user-select: none;  
+        transition: .2s;  
+    }  
+
+    .comments-toggle-bar:hover {  
+        background: #333;  
+    }  
+
+    .comments-content-wrapper {  
+        display: none;  
+        margin-top: 10px;  
+    }  
+
+    .comments-content-wrapper.open {  
+        display: block;  
+    }  
+
+    /* BOTÓN ADMIN */  
+
+    .admin-login-btn {  
+        background: #272727;  
+        color: #3ea6ff;  
+        border: 1px solid #3ea6ff;  
+        padding: 5px 10px;  
+        border-radius: 12px;  
+        font-size: 11px;  
+        cursor: pointer;  
+        font-weight: bold;  
+    }  
+
+    .admin-login-btn.active {  
+        background: #ff0000;  
+        color: white;  
+        border-color: #ff0000;  
+    }  
+
+    /* CAJA PARA ESCRIBIR */  
+
+    .comment-input-box {  
+        display: none;  
+        flex-direction: column;  
+        gap: 8px;  
+        margin-bottom: 15px;  
+        background: #181818;  
+        padding: 10px;  
+        border-radius: 8px;  
+        border: 1px dashed #444;  
+    }  
+
+    .comment-input-box.active {  
+        display: flex;  
+    }  
+
+    .admin-title {  
+        font-size: 11px;  
+        color: #ff4444;  
+        font-weight: bold;  
+        margin-bottom: 4px;  
+    }  
+
+    .comment-input-box textarea {  
+        background: #121212;  
+        border: 1px solid #333;  
+        color: white;  
+        padding: 8px 12px;  
+        border-radius: 8px;  
+        font-size: 13px;  
+        outline: none;  
+        width: 100%;  
+        resize: none;  
+    }  
+
+    .comment-input-box textarea:focus {  
+        border-color: #ff0000;  
+    }  
+
+    .comment-btn-container {  
+        display: flex;  
+        justify-content: flex-end;  
+    }  
+
+    .comment-input-box button {  
+        background: #ff0000;  
+        color: white;  
+        border: none;  
+        padding: 8px 16px;  
+        border-radius: 15px;  
+        font-weight: bold;  
+        cursor: pointer;  
+        font-size: 12px;  
+    }  
+
+    /* COMENTARIOS */  
+
+    .comment-item {  
+        background: #181818;  
+        padding: 10px;  
+        border-radius: 8px;  
+        margin-bottom: 8px;  
+        font-size: 13px;  
+    }  
+
+    .comment-actions {  
+        font-size: 11px;  
+        color: #aaa;  
+        margin-top: 6px;  
+    }  
+
+    .comment-actions span {  
+        color: #ff4444;  
+        cursor: pointer;  
+    }  
+
+    .comment-actions span:hover {  
+        color: #ff7777;  
+    }  
+
+    .admin-badge {  
+        background: #ff0000;  
+        color: white;  
+        padding: 1px 5px;  
+        border-radius: 4px;  
+        font-size: 9px;  
+        margin-left: 4px;  
+    }  
+
+    .no-comments {  
+        color: #666;  
+        font-size: 12px;  
+        text-align: center;  
+        padding: 8px;  
+    }  
+</style>
+</head>  
+<body>  
+
+<!-- ================= VIDEO 1 ================= -->  
+<div class="video-container">  
+    <div class="video-wrapper">  
+        <video controls controlsList="nodownload">  
+            <source src="videos/video1.mp4" type="video/mp4">  
+            Tu navegador no soporta video.  
+        </video>  
+    </div>  
+    <div class="video-info">  
+        <div class="video-title">  
+            NUEVA ACTUALIZACIÓN FAKE LAG DNS ☠️ ACTUALIZADO  
+        </div>  
+        <div class="channel-row">  
+            <div class="channel-details">  
+                <div class="channel-avatar">F</div>  
+                <div>  
+                    <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
+                    <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
+                </div>  
+            </div>  
+            <button id="adminBtn" class="admin-login-btn" onclick="pedirCodigoAdmin()">🔑 Código 007</button>  
+        </div>  
+        <div class="actions-row">  
+            <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>  
+            <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>  
+        </div>  
+        <div class="comments-section">  
+            <div class="comments-toggle-bar" onclick="toggleComentarios('video1')">  
+                <span>💬 Ver Comentarios (<span id="commentCount-1">0</span>)</span>  
+                <span id="arrow-1">▼</span>  
+            </div>  
+            <div id="commentsWrapper-1" class="comments-content-wrapper">  
+                <div id="adminInputBox-1" class="comment-input-box">  
+                    <div class="admin-title">🔴 PANEL DE ADMINISTRADOR — FISCAL 007</div>  
+                    <textarea id="textoComment-1" placeholder="Escribe un comentario oficial..." rows="2"></textarea>  
+                    <div class="comment-btn-container">  
+                        <button onclick="agregarComentario('video1')">Publicar como Admin</button>  
+                    </div>  
+                </div>  
+                <div id="listaComentarios-1">  
+                    <div class="no-comments">Cargando comentarios...</div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+</div>  
+
+<!-- ================= VIDEO 2 ================= -->  
+<div class="video-container">  
+    <div class="video-wrapper">  
+        <video controls controlsList="nodownload">  
+            <source src="videos/video2.mp4" type="video/mp4">  
+            Tu navegador no soporta video.  
+        </video>  
+    </div>  
+    <div class="video-info">  
+        <div class="video-title">  
+            CONFIGURACIÓN DE SENSIBILIDAD PERFECTA FREE FIRE 🎯  
+        </div>  
+        <div class="channel-row">  
+            <div class="channel-details">  
+                <div class="channel-avatar">F</div>  
+                <div>  
+                    <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
+                    <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
+                </div>  
+            </div>  
+        </div>  
+        <div class="actions-row">  
+            <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>  
+            <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>  
+        </div>  
+        <div class="comments-section">  
+            <div class="comments-toggle-bar" onclick="toggleComentarios('video2')">  
+                <span>💬 Ver Comentarios (<span id="commentCount-2">0</span>)</span>  
+                <span id="arrow-2">▼</span>  
+            </div>  
+            <div id="commentsWrapper-2" class="comments-content-wrapper">  
+                <div id="adminInputBox-2" class="comment-input-box">  
+                    <div class="admin-title">🔴 PANEL DE ADMINISTRADOR — FISCAL 007</div>  
+                    <textarea id="textoComment-2" placeholder="Escribe un comentario oficial..." rows="2"></textarea>  
+                    <div class="comment-btn-container">  
+                        <button onclick="agregarComentario('video2')">Publicar como Admin</button>  
+                    </div>  
+                </div>  
+                <div id="listaComentarios-2">  
+                    <div class="no-comments">Cargando comentarios...</div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+</div>  
+
+<!-- ================= VIDEO 3 ================= -->  
+<div class="video-container">  
+    <div class="video-wrapper">  
+        <video controls controlsList="nodownload">  
+            <source src="videos/video3.mp4" type="video/mp4">  
+            Tu navegador no soporta video.  
+        </video>  
+    </div>  
+    <div class="video-info">  
+        <div class="video-title">  
+            TUTORIAL NUEVO MACRO Y CONFIGURACIÓN VIP 🔥  
+        </div>  
+        <div class="channel-row">  
+            <div class="channel-details">  
+                <div class="channel-avatar">F</div>  
+                <div>  
+                    <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
+                    <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
+                </div>  
+            </div>  
+        </div>  
+        <div class="actions-row">  
+            <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>  
+            <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>  
+        </div>  
+        <div class="comments-section">  
+            <div class="comments-toggle-bar" onclick="toggleComentarios('video3')">  
+                <span>💬 Ver Comentarios (<span id="commentCount-3">0</span>)</span>  
+                <span id="arrow-3">▼</span>  
+            </div>  
+            <div id="commentsWrapper-3" class="comments-content-wrapper">  
+                <div id="adminInputBox-3" class="comment-input-box">  
+                    <div class="admin-title">🔴 PANEL DE ADMINISTRADOR — FISCAL 007</div>  
+                    <textarea id="textoComment-3" placeholder="Escribe un comentario oficial..." rows="2"></textarea>  
+                    <div class="comment-btn-container">  
+                        <button onclick="agregarComentario('video3')">Publicar como Admin</button>  
+                    </div>  
+                </div>  
+                <div id="listaComentarios-3">  
+                    <div class="no-comments">Cargando comentarios...</div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+</div>  
+
+<!-- ================= JAVASCRIPT ================= -->  
+<script>  
+    const BIN_ID = "6abf3053ac6210605a0b2fcb";  
+    const API_KEY = "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";  
+
+    let datosGlobales = {  
+        video1: { comentarios: [] },  
+        video2: { comentarios: [] },  
+        video3: { comentarios: [] }  
+    };  
+
+    let esAdmin = localStorage.getItem("fiscal_admin_logged") === "true";  
+
+    document.addEventListener("DOMContentLoaded", function () {  
+        actualizarEstadoAdminUI();  
+        cargarDatosNube();  
+    });  
+
+    async function cargarDatosNube() {  
+        // 1. CARGAMOS PRIMERO EL RESPALDO LOCAL PARA QUE SEA INMEDIATO
+        const localRespaldo = localStorage.getItem("fiscal_datos_seguros");  
+        if (localRespaldo) {  
+            try {  
+                datosGlobales = JSON.parse(localRespaldo);  
+                asegurarDatos();  
+                renderizarTodo();  
+            } catch (e) {  
+                console.log("Error leyendo respaldo local.");  
+            }  
+        }  
+
+        // 2. INTENTAMOS ACTUALIZAR DESDE LA NUBE EN SEGUNDO PLANO
+        try {  
+            const respuesta = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {  
+                method: "GET",  
+                headers: { "X-Master-Key": API_KEY }  
+            });  
+
+            if (respuesta.ok) {  
+                const resultado = await respuesta.json();  
+                if (resultado && resultado.record) {  
+                    // Combinamos o priorizamos la nube si tiene datos válidos
+                    datosGlobales = resultado.record;  
+                    asegurarDatos();  
+                    renderizarTodo();  
+                    // Actualizamos el local con lo último de la nube
+                    localStorage.setItem("fiscal_datos_seguros", JSON.stringify(datosGlobales));  
+                }  
+            }  
+        } catch (error) {  
+            console.log("Modo offline o error al conectar con JSONBin. Usando datos locales.");  
+        }  
+    }  
+
+    function asegurarDatos() {  
+        if (!datosGlobales.video1) datosGlobales.video1 = { comentarios: [] };  
+        if (!datosGlobales.video1.comentarios) datosGlobales.video1.comentarios = [];  
+        if (!datosGlobales.video2) datosGlobales.video2 = { comentarios: [] };  
+        if (!datosGlobales.video2.comentarios) datosGlobales.video2.comentarios = [];  
+        if (!datosGlobales.video3) datosGlobales.video3 = { comentarios: [] };  
+        if (!datosGlobales.video3.comentarios) datosGlobales.video3.comentarios = [];  
+    }  
+
+    async function guardarDatosNube() {  
+        asegurarDatos();  
+
+        // GUARDADO LOCAL OBLIGATORIO (Esto evita que se pierdan al actualizar)  
+        localStorage.setItem("fiscal_datos_seguros", JSON.stringify(datosGlobales));  
+        renderizarTodo();  
+
+        // INTENTO DE GUARDADO EN LA NUBE DE FONDO  
+        try {  
+            await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {  
+                method: "PUT",  
+                headers: {  
+                    "Content-Type": "application/json",  
+                    "X-Master-Key": API_KEY  
+                },  
+                body: JSON.stringify(datosGlobales)  
+            });  
+        } catch (error) {  
+            console.log("Guardado local exitoso. La nube no respondió, pero tus datos están seguros en este navegador.");  
+        }  
+    }  
+
+    function renderizarTodo() {  
+        asegurarDatos();  
+
+        document.getElementById("commentCount-1").innerText = datosGlobales.video1.comentarios.length;  
+        document.getElementById("commentCount-2").innerText = datosGlobales.video2.comentarios.length;  
+        document.getElementById("commentCount-3").innerText = datosGlobales.video3.comentarios.length;  
+
+        renderizarListaComentarios("video1", "listaComentarios-1");  
+        renderizarListaComentarios("video2", "listaComentarios-2");  
+        renderizarListaComentarios("video3", "listaComentarios-3");  
+    }  
+
+    function renderizarListaComentarios(videoId, elementId) {  
+        const contenedor = document.getElementById(elementId);  
+        if (!contenedor) return;  
+
+        contenedor.innerHTML = "";  
+        const comentarios = datosGlobales[videoId].comentarios;  
+
+        if (!comentarios || comentarios.length === 0) {  
+            contenedor.innerHTML = `<div class="no-comments">No hay comentarios todavía.</div>`;  
+            return;  
+        }  
+
+        comentarios.forEach(function (comentario, index) {  
+            const div = document.createElement("div");  
+            div.className = "comment-item";  
+
+            const usuario = document.createElement("div");  
+            usuario.innerHTML = `<strong>@Fiscal 007 VIP</strong> <span class="admin-badge">Admin</span>`;  
+
+            const texto = document.createElement("div");  
+            texto.style.marginTop = "4px";  
+            texto.style.color = "#ddd";  
+            texto.style.wordBreak = "break-word";  
+            texto.textContent = comentario.texto;  
+
+            div.appendChild(usuario);  
+            div.appendChild(texto);  
+
+            if (esAdmin) {  
+                const acciones = document.createElement("div");  
+                acciones.className = "comment-actions";  
+
+                const eliminar = document.createElement("span");  
+                eliminar.textContent = "Eliminar";  
+                eliminar.onclick = function () {  
+                    eliminarComentario(videoId, index);  
+                };  
+
+                acciones.appendChild(eliminar);  
+                div.appendChild(acciones);  
+            }  
+
+            contenedor.appendChild(div);  
+        });  
+    }  
+
+    function toggleComentarios(videoId) {  
+        let numero = "1";  
+        if (videoId === "video2") numero = "2";  
+        if (videoId === "video3") numero = "3";  
+
+        const wrapper = document.getElementById("commentsWrapper-" + numero);  
+        const arrow = document.getElementById("arrow-" + numero);  
+
+        if (wrapper.classList.contains("open")) {  
+            wrapper.classList.remove("open");  
+            arrow.innerText = "▼";  
+        } else {  
+            wrapper.classList.add("open");  
+            arrow.innerText = "▲";  
+        }  
+    }  
+
+    function agregarComentario(videoId) {  
+        if (!esAdmin) {  
+            alert("Solo el administrador puede publicar comentarios.");  
+            return;  
+        }  
+
+        let numero = "1";  
+        if (videoId === "video2") numero = "2";  
+        if (videoId === "video3") numero = "3";  
+
+        const input = document.getElementById("textoComment-" + numero);  
+        if (!input) return;  
+
+        const texto = input.value.trim();  
+        if (!texto) {  
+            alert("Escribe un comentario antes de publicar.");  
+            return;  
+        }  
+
+        const nuevoComentario = {  
+            texto: texto,  
+            fecha: new Date().toLocaleString()  
+        };  
+
+        datosGlobales[videoId].comentarios.unshift(nuevoComentario);  
+        input.value = "";  
+        guardarDatosNube();  
+    }  
+
+    function eliminarComentario(videoId, index) {  
+        if (!esAdmin) {  
+            alert("No tienes permisos.");  
+            return;  
+        }  
+
+        if (!confirm("¿Seguro que deseas eliminar este comentario?")) {  
+            return;  
+        }  
+
+        datosGlobales[videoId].comentarios.splice(index, 1);  
+        guardarDatosNube();  
+    }  
+
+    function pedirCodigoAdmin() {  
+        if (esAdmin) {  
+            const cerrar = confirm("¿Quieres cerrar la sesión de Administrador?");  
+            if (cerrar) {  
+                esAdmin = false;  
+                localStorage.removeItem("fiscal_admin_logged");  
+                actualizarEstadoAdminUI();  
+                renderizarTodo();  
+            }  
+            return;  
+        }  
+
+        const codigo = prompt("Introduce el código de Administrador:");  
+
+        if (codigo === "007") {  
+            esAdmin = true;  
+            localStorage.setItem("fiscal_admin_logged", "true");  
+            alert("🛡️ ¡Modo Administrador activado!");  
+            actualizarEstadoAdminUI();  
+            renderizarTodo();  
+        } else if (codigo !== null) {  
+            alert("❌ Código incorrecto.");  
+        }  
+    }  
+
+    function actualizarEstadoAdminUI() {  
+        const boton = document.getElementById("adminBtn");  
+        const caja1 = document.getElementById("adminInputBox-1");  
+        const caja2 = document.getElementById("adminInputBox-2");  
+        const caja3 = document.getElementById("adminInputBox-3");  
+
+        if (esAdmin) {  
+            if (boton) {  
+                boton.innerText = "🛡️ Admin Activo";  
+                boton.classList.add("active");  
+            }  
+            if (caja1) caja1.classList.add("active");  
+            if (caja2) caja2.classList.add("active");  
+            if (caja3) caja3.classList.add("active");  
+        } else {  
+            if (boton) {  
+                boton.innerText = "🔑 Código 007";  
+                boton.classList.remove("active");  
+            }  
+            if (caja1) caja1.classList.remove("active");  
+            if (caja2) caja2.classList.remove("active");  
+            if (caja3) caja3.classList.remove("active");  
+        }  
+    }  
+
+    function compartirWeb() {  
+        if (navigator.share) {  
+            navigator.share({  
+                title: document.title,  
+                url: window.location.href  
+            }).catch(() => {});  
+        } else {  
+            navigator.clipboard.writeText(window.location.href).then(function () {  
+                alert("🔗 ¡Enlace copiado!");  
+            });  
+        }  
+    }  
+</script>  
+</body>  
+</html>
