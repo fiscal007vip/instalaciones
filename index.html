@@ -96,8 +96,6 @@
         .action-btn:hover {
             background: #3f3f3f;
         }
-        
-        /* Sección de Comentarios Desplegable */
         .comments-section {
             border-top: 1px solid #3f3f3f;
             padding-top: 12px;
@@ -251,7 +249,6 @@
                 </div>
                 
                 <div class="comments-content-wrapper" id="commentsWrapper-1">
-                    <!-- Caja de comentario solo visible para el admin -->
                     <div id="adminInputBox-1" class="comment-input-box" style="display: none;">
                         <div style="font-size: 11px; color: #ff4444; font-weight: bold; margin-bottom: 4px;">PANEL DE ADMINISTRADOR (FISCAL 007)</div>
                         <textarea id="textoComment-1" placeholder="Escribe un comentario oficial..." rows="2"></textarea>
@@ -353,18 +350,28 @@
                     datosGlobales = resultado.record;
                 }
             } catch (error) {
-                let localRespaldo = localStorage.getItem('fiscal_datos_seguros');
-                if (localRespaldo) {
-                    datosGlobales = JSON.parse(localRespaldo);
-                }
+                console.log("Fallo al conectar con JsonBin, usando caché local.");
+            }
+            
+            // Respaldo local prioritario para asegurar fluidez en móvil
+            let localRespaldo = localStorage.getItem('fiscal_datos_seguros');
+            if (localRespaldo) {
+                try {
+                    let parsedLocal = JSON.parse(localRespaldo);
+                    if (parsedLocal.video1 && parsedLocal.video1.comentarios) {
+                        datosGlobales = parsedLocal;
+                    }
+                } catch(e) {}
             }
             renderizarTodo();
         }
 
         async function guardarDatosNube() {
+            // Guardar inmediatamente de manera local para que se vea reflejado al instante
             localStorage.setItem('fiscal_datos_seguros', JSON.stringify(datosGlobales));
             renderizarTodo();
 
+            // Intentar actualizar la nube en segundo plano sin bloquear la interfaz
             try {
                 await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                     method: 'PUT',
@@ -375,11 +382,14 @@
                     body: JSON.stringify(datosGlobales)
                 });
             } catch (error) {
-                console.log("Guardado local realizado.");
+                console.log("Guardado en nube diferido por red.");
             }
         }
 
         function renderizarTodo() {
+            if (!datosGlobales.video1) datosGlobales.video1 = { likes: 0, comentarios: [] };
+            if (!datosGlobales.video2) datosGlobales.video2 = { likes: 0, comentarios: [] };
+
             document.getElementById('likeCount-1').innerText = datosGlobales.video1.likes || 0;
             document.getElementById('commentCount-1').innerText = datosGlobales.video1.comentarios ? datosGlobales.video1.comentarios.length : 0;
             renderizarListaComentarios('video1', datosGlobales.video1.comentarios, 'listaComentarios-1');
@@ -404,7 +414,7 @@
                 
                 div.innerHTML = `
                     <div><strong>@Fiscal 007 VIP</strong> <span class="admin-badge">Admin</span></div>
-                    <div style="margin-top: 4px; color: #ddd;">${c.texto}</div>
+                    <div style="margin-top: 4px; color: #ddd; word-break: break-word;">${c.texto}</div>
                     ${esAdmin ? `<div class="comment-actions"><span style="color: #ff4444;" onclick="eliminarComentario('${videoId}',${index})">Eliminar</span></div>` : ''}
                 `;
                 contenedor.appendChild(div);
@@ -436,10 +446,16 @@
         function agregarComentario(videoId) {
             let num = videoId === 'video1' ? '1' : '2';
             let inputTexto = document.getElementById(`textoComment-${num}`);
+            
+            if (!inputTexto) {
+                alert("Error: No se encontró el campo de texto.");
+                return;
+            }
+
             let texto = inputTexto.value.trim();
 
             if (!texto) {
-                alert("Escribe un comentario.");
+                alert("Escribe un comentario antes de publicar.");
                 return;
             }
 
@@ -448,6 +464,9 @@
                 fecha: new Date().toLocaleDateString()
             };
 
+            if (!datosGlobales[videoId]) {
+                datosGlobales[videoId] = { likes: 0, comentarios: [] };
+            }
             if (!datosGlobales[videoId].comentarios) {
                 datosGlobales[videoId].comentarios = [];
             }
@@ -458,7 +477,7 @@
         }
 
         function eliminarComentario(videoId, index) {
-            if (confirm("¿Eliminar este comentario?")) {
+            if (confirm("¿Seguro que deseas eliminar este comentario?")) {
                 datosGlobales[videoId].comentarios.splice(index, 1);
                 guardarDatosNube();
             }
@@ -503,22 +522,3 @@
                 if(msg2) msg2.style.display = 'none';
             } else {
                 btn.innerText = "🔑 Código 007";
-                btn.classList.remove('active');
-                if(box1) box1.style.display = 'none';
-                if(box2) box2.style.display = 'none';
-                if(msg1) msg1.style.display = 'block';
-                if(msg2) msg2.style.display = 'block';
-            }
-        }
-
-        function compartirWeb() {
-            if (navigator.share) {
-                navigator.share({ title: document.title, url: window.location.href }).catch(() => {});
-            } else {
-                navigator.clipboard.writeText(window.location.href);
-                alert("¡Enlace copiado!");
-            }
-        }
-    </script>
-</body>
-</html>
