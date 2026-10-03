@@ -134,9 +134,6 @@
             display: none;
             margin-top: 10px;
         }
-        .comments-content-wrapper.open {
-            display: block;
-        }
         .comment-input-box {
             display: flex;
             flex-direction: column;
@@ -198,15 +195,6 @@
             font-size: 9px;
             margin-left: 4px;
         }
-        .restricted-msg {
-            font-size: 12px;
-            color: #777;
-            text-align: center;
-            padding: 8px;
-            background: #151515;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
@@ -246,15 +234,13 @@
                 </div>
                 
                 <div class="comments-content-wrapper" id="commentsWrapper-1">
+                    <!-- Solo visible si metes el código 007 -->
                     <div id="adminInputBox-1" class="comment-input-box" style="display: none;">
                         <div style="font-size: 11px; color: #ff4444; font-weight: bold; margin-bottom: 4px;">PANEL DE ADMINISTRADOR (FISCAL 007)</div>
                         <textarea id="textoComment-1" placeholder="Escribe un comentario oficial..." rows="2"></textarea>
                         <div class="comment-btn-container">
                             <button onclick="agregarComentario('video1')">Publicar como Admin</button>
                         </div>
-                    </div>
-                    <div id="restrictedMsg-1" class="restricted-msg">
-                        🔒 Solo el administrador (Código 007) puede publicar comentarios.
                     </div>
 
                     <div id="listaComentarios-1">
@@ -298,15 +284,13 @@
                 </div>
                 
                 <div class="comments-content-wrapper" id="commentsWrapper-2">
+                    <!-- Solo visible si metes el código 007 -->
                     <div id="adminInputBox-2" class="comment-input-box" style="display: none;">
                         <div style="font-size: 11px; color: #ff4444; font-weight: bold; margin-bottom: 4px;">PANEL DE ADMINISTRADOR (FISCAL 007)</div>
                         <textarea id="textoComment-2" placeholder="Escribe un comentario oficial..." rows="2"></textarea>
                         <div class="comment-btn-container">
                             <button onclick="agregarComentario('video2')">Publicar como Admin</button>
                         </div>
-                    </div>
-                    <div id="restrictedMsg-2" class="restricted-msg">
-                        🔒 Solo el administrador (Código 007) puede publicar comentarios.
                     </div>
 
                     <div id="listaComentarios-2">
@@ -416,11 +400,11 @@
             let wrapper = document.getElementById(`commentsWrapper-${num}`);
             let arrow = document.getElementById(`arrow-${num}`);
             
-            if (wrapper.classList.contains('open')) {
-                wrapper.classList.remove('open');
+            if (wrapper.style.display === 'block') {
+                wrapper.style.display = 'none';
                 arrow.innerText = '▼';
             } else {
-                wrapper.classList.add('open');
+                wrapper.style.display = 'block';
                 arrow.innerText = '▲';
             }
         }
@@ -429,13 +413,9 @@
             let num = videoId === 'video1' ? '1' : '2';
             let inputTexto = document.getElementById(`textoComment-${num}`);
             
-            if (!inputTexto) {
-                alert("Error: No se encontró el campo de texto.");
-                return;
-            }
+            if (!inputTexto) return;
 
             let texto = inputTexto.value.trim();
-
             if (!texto) {
                 alert("Escribe un comentario antes de publicar.");
                 return;
@@ -492,8 +472,6 @@
             let btn = document.getElementById('adminBtn');
             let box1 = document.getElementById('adminInputBox-1');
             let box2 = document.getElementById('adminInputBox-2');
-            let msg1 = document.getElementById('restrictedMsg-1');
-            let msg2 = document.getElementById('restrictedMsg-2');
 
             if (esAdmin) {
                 if(btn) {
@@ -502,10 +480,10 @@
                 }
                 if(box1) box1.style.display = 'block';
                 if(box2) box2.style.display = 'block';
-                if(msg1) msg1.style.display = 'none';
-                if(msg2) msg2.style.display = 'none';
             } else {
                 if(btn) {
                     btn.innerText = "🔑 Código 007";
                     btn.classList.remove('active');
                 }
+                if(box1) box1.style.display = 'none';
+                if(box2) box2.style.display = 'none';
