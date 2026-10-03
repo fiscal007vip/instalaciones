@@ -235,9 +235,6 @@
             </div>
 
             <div class="actions-row">
-                <button class="action-btn" id="likeBtn-1" onclick="darLike('video1')">
-                    👍 <span id="likeCount-1">0</span>
-                </button>
                 <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>
                 <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>
             </div>
@@ -290,9 +287,6 @@
             </div>
 
             <div class="actions-row">
-                <button class="action-btn" id="likeBtn-2" onclick="darLike('video2')">
-                    👍 <span id="likeCount-2">0</span>
-                </button>
                 <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>
                 <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>
             </div>
@@ -329,8 +323,8 @@
         const API_KEY = "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";
         
         let datosGlobales = {
-            video1: { likes: 0, comentarios: [] },
-            video2: { likes: 0, comentarios: [] }
+            video1: { comentarios: [] },
+            video2: { comentarios: [] }
         };
         
         let esAdmin = localStorage.getItem('fiscal_admin_logged') === 'true';
@@ -353,7 +347,6 @@
                 console.log("Fallo al conectar con JsonBin, usando caché local.");
             }
             
-            // Respaldo local prioritario para asegurar fluidez en móvil
             let localRespaldo = localStorage.getItem('fiscal_datos_seguros');
             if (localRespaldo) {
                 try {
@@ -367,11 +360,9 @@
         }
 
         async function guardarDatosNube() {
-            // Guardar inmediatamente de manera local para que se vea reflejado al instante
             localStorage.setItem('fiscal_datos_seguros', JSON.stringify(datosGlobales));
             renderizarTodo();
 
-            // Intentar actualizar la nube en segundo plano sin bloquear la interfaz
             try {
                 await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                     method: 'PUT',
@@ -387,20 +378,19 @@
         }
 
         function renderizarTodo() {
-            if (!datosGlobales.video1) datosGlobales.video1 = { likes: 0, comentarios: [] };
-            if (!datosGlobales.video2) datosGlobales.video2 = { likes: 0, comentarios: [] };
+            if (!datosGlobales.video1) datosGlobales.video1 = { comentarios: [] };
+            if (!datosGlobales.video2) datosGlobales.video2 = { comentarios: [] };
 
-            document.getElementById('likeCount-1').innerText = datosGlobales.video1.likes || 0;
             document.getElementById('commentCount-1').innerText = datosGlobales.video1.comentarios ? datosGlobales.video1.comentarios.length : 0;
             renderizarListaComentarios('video1', datosGlobales.video1.comentarios, 'listaComentarios-1');
 
-            document.getElementById('likeCount-2').innerText = datosGlobales.video2.likes || 0;
             document.getElementById('commentCount-2').innerText = datosGlobales.video2.comentarios ? datosGlobales.video2.comentarios.length : 0;
             renderizarListaComentarios('video2', datosGlobales.video2.comentarios, 'listaComentarios-2');
         }
 
         function renderizarListaComentarios(videoId, comentarios, elementId) {
             let contenedor = document.getElementById(elementId);
+            if (!contenedor) return;
             contenedor.innerHTML = '';
 
             if (!comentarios || comentarios.length === 0) {
@@ -435,14 +425,6 @@
             }
         }
 
-        function darLike(videoId) {
-            if (!datosGlobales[videoId]) {
-                datosGlobales[videoId] = { likes: 0, comentarios: [] };
-            }
-            datosGlobales[videoId].likes++;
-            guardarDatosNube();
-        }
-
         function agregarComentario(videoId) {
             let num = videoId === 'video1' ? '1' : '2';
             let inputTexto = document.getElementById(`textoComment-${num}`);
@@ -465,7 +447,7 @@
             };
 
             if (!datosGlobales[videoId]) {
-                datosGlobales[videoId] = { likes: 0, comentarios: [] };
+                datosGlobales[videoId] = { comentarios: [] };
             }
             if (!datosGlobales[videoId].comentarios) {
                 datosGlobales[videoId].comentarios = [];
@@ -514,11 +496,16 @@
             let msg2 = document.getElementById('restrictedMsg-2');
 
             if (esAdmin) {
-                btn.innerText = "🛡️ Admin Activo";
-                btn.classList.add('active');
+                if(btn) {
+                    btn.innerText = "🛡️ Admin Activo";
+                    btn.classList.add('active');
+                }
                 if(box1) box1.style.display = 'block';
                 if(box2) box2.style.display = 'block';
                 if(msg1) msg1.style.display = 'none';
                 if(msg2) msg2.style.display = 'none';
             } else {
-                btn.innerText = "🔑 Código 007";
+                if(btn) {
+                    btn.innerText = "🔑 Código 007";
+                    btn.classList.remove('active');
+                }
