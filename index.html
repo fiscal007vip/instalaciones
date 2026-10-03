@@ -76,11 +76,10 @@
         height: 36px;  
         border-radius: 50%;  
         background: #ff0000;  
+        object-fit: cover; /* Ajusta tu imagen para que no se deforme */  
         display: flex;  
         align-items: center;  
         justify-content: center;  
-        font-weight: bold;  
-        font-size: 14px;  
     }  
 
     .actions-row {  
@@ -272,21 +271,21 @@
     </div>  
     <div class="video-info">  
         <div class="video-title">  
-            NUEVA ACTUALIZACIÓN FAKE LAG DNS ☠️ ACTUALIZADO  
+            INSTALACION DEL AUTO APUNTADO FUNCIONA CON EL FF GLOBAL.  
         </div>  
         <div class="channel-row">  
             <div class="channel-details">  
-                <div class="channel-avatar">F</div>  
+                <img src="imagenes/logo.png" alt="Logo" class="channel-avatar">  
                 <div>  
                     <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
                     <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
                 </div>  
             </div>  
-            <button id="adminBtn" class="admin-login-btn" onclick="pedirCodigoAdmin()">🔑 Código 007</button>  
+            <button id="adminBtn" class="admin-login-btn" onclick="pedirCodigoAdmin()">🔑 Código</button>  
         </div>  
         <div class="actions-row">  
             <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>  
-            <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>  
+            <a href="https://arthurvipff.github.io/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>  
         </div>  
         <div class="comments-section">  
             <div class="comments-toggle-bar" onclick="toggleComentarios('video1')">  
@@ -323,7 +322,7 @@
         </div>  
         <div class="channel-row">  
             <div class="channel-details">  
-                <div class="channel-avatar">F</div>  
+                <img src="img/logo.png" alt="Logo" class="channel-avatar">  
                 <div>  
                     <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
                     <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
@@ -369,7 +368,7 @@
         </div>  
         <div class="channel-row">  
             <div class="channel-details">  
-                <div class="channel-avatar">F</div>  
+                <img src="img/logo.png" alt="Logo" class="channel-avatar">  
                 <div>  
                     <div style="font-weight:bold;font-size:14px;">Fiscal 007 VIP</div>  
                     <div style="font-size:12px;color:#aaa;">@fiscalff2019</div>  
@@ -420,7 +419,6 @@
     });  
 
     async function cargarDatosNube() {  
-        // 1. CARGAMOS PRIMERO EL RESPALDO LOCAL PARA QUE SEA INMEDIATO
         const localRespaldo = localStorage.getItem("fiscal_datos_seguros");  
         if (localRespaldo) {  
             try {  
@@ -432,7 +430,6 @@
             }  
         }  
 
-        // 2. INTENTAMOS ACTUALIZAR DESDE LA NUBE EN SEGUNDO PLANO
         try {  
             const respuesta = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {  
                 method: "GET",  
@@ -442,11 +439,9 @@
             if (respuesta.ok) {  
                 const resultado = await respuesta.json();  
                 if (resultado && resultado.record) {  
-                    // Combinamos o priorizamos la nube si tiene datos válidos
                     datosGlobales = resultado.record;  
                     asegurarDatos();  
                     renderizarTodo();  
-                    // Actualizamos el local con lo último de la nube
                     localStorage.setItem("fiscal_datos_seguros", JSON.stringify(datosGlobales));  
                 }  
             }  
@@ -467,11 +462,9 @@
     async function guardarDatosNube() {  
         asegurarDatos();  
 
-        // GUARDADO LOCAL OBLIGATORIO (Esto evita que se pierdan al actualizar)  
         localStorage.setItem("fiscal_datos_seguros", JSON.stringify(datosGlobales));  
         renderizarTodo();  
 
-        // INTENTO DE GUARDADO EN LA NUBE DE FONDO  
         try {  
             await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {  
                 method: "PUT",  
@@ -575,6 +568,9 @@
         if (!input) return;  
 
         const texto = input.value.trim();  
+        if (!texto5) { // Nota: se mantiene con lógica segura  
+            // validación estándar  
+        }  
         if (!texto) {  
             alert("Escribe un comentario antes de publicar.");  
             return;  
