@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo y Tutoriales - Fiscal 007 VIP</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Roboto, Arial, sans-serif;
+        }
+        body {
+            background-color: #0f0f0f;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .video-container {
+            width: 100%;
+            max-width: 500px;
+            background: #1f1f1f;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+        }
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #000;
+        }
+        .video-wrapper video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .video-info {
+            padding: 16px;
+        }
+        .video-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .channel-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .channel-details {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .channel-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ff0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .actions-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            background: #272727;
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .action-btn:hover {
+            background: #3f3f3f;
+        }
+        .action-btn.liked {
+            color: #3ea6ff;
+        }
+        
+        /* Comentarios */
+        .comments-section {
+            border-top: 1px solid #3f3f3f;
+            padding-top: 12px;
+        }
+        .comments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .comment-input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .comment-input-box input, .comment-input-box textarea {
+            background: #121212;
+            border: 1px solid #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+        }
+        .comment-input-box button {
+            background: #3ea6ff;
+            color: black;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-end;
+            font-size: 12px;
+        }
+        .comment-item {
+            background: #181818;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .comment-actions {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 6px;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+        }
+        .comment-actions span:hover {
+            color: #fff;
+        }
+        .admin-badge {
+            background: #ff0000;
+            color: white;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 9px;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PRIMER CONTENEDOR DE VIDEO -->
+    <div class="video-container" id="video-1">
+        <div class="video-wrapper">
+            <video controls controlsList="nodownload">
+                <source src="videos/video1.mp4" type="video/mp4">
+                Tu navegador no soporta video.
+            </video>
+        </div>
+        <div class="video-info">
+            <div class="video-title">NUEVA ACTUALIZACIÓN FAKE LAG DNS ☠️ ACTUALIZADO</div>
+            <div class="channel-row">
+                <div class="channel-details">
+                    <div class="channel-avatar">F</div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 14px;">Fiscal 007 VIP</div>
+                        <div style="font-size: 12px; color: #aaa;">@fiscalff2019</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-row">
+                <button class="action-btn" id="likeBtn-1" onclick="darLike('video1')">
+                    👍 <span id="likeCount-1">0</span>
+                </button>
+                <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>
+                <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>
+            </div>
+
+            <div class="comments-section">
+                <div class="comments-header">
+                    <span>Comentarios (<span id="commentCount-1">0</span>)</span>
+                    <span onclick="activarAdmin()" style="cursor: pointer; font-size: 11px;">Admin ⚙️</span>
+                </div>
+                <div class="comment-input-box">
+                    <input type="text" id="nombreUser-1" placeholder="Tu nombre...">
+                    <textarea id="textoComment-1" placeholder="Añade un comentario..." rows="2"></textarea>
+                    <button onclick="agregarComentario('video1')">Comentar</button>
+                </div>
+                <div id="listaComentarios-1">
+                    <div style="color: #666; font-size: 12px; text-align: center;">Cargando comentarios...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SEGUNDO CONTENEDOR DE VIDEO -->
+    <div class="video-container" id="video-2">
+        <div class="video-wrapper">
+            <video controls controlsList="nodownload">
+                <source src="videos/video2.mp4" type="video/mp4">
+                Tu navegador no soporta video.
+            </video>
+        </div>
+        <div class="video-info">
+            <div class="video-title">CONFIGURACIÓN DE SENSIBILIDAD PERFECTA FREE FIRE 🎯</div>
+            <div class="channel-row">
+                <div class="channel-details">
+                    <div class="channel-avatar">F</div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 14px;">Fiscal 007 VIP</div>
+                        <div style="font-size: 12px; color: #aaa;">@fiscalff2019</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions-row">
+                <button class="action-btn" id="likeBtn-2" onclick="darLike('video2')">
+                    👍 <span id="likeCount-2">0</span>
+                </button>
+                <button class="action-btn" onclick="compartirWeb()">🔗 Compartir</button>
+                <a href="https://arthurvipff.github.io/hacksff/" target="_blank" class="action-btn">⬇️ Descargar Mod</a>
+            </div>
+
+            <div class="comments-section">
+                <div class="comments-header">
+                    <span>Comentarios (<span id="commentCount-2">0</span>)</span>
+                </div>
+                <div class="comment-input-box">
+                    <input type="text" id="nombreUser-2" placeholder="Tu nombre...">
+                    <textarea id="textoComment-2" placeholder="Añade un comentario..." rows="2"></textarea>
+                    <button onclick="agregarComentario('video2')">Comentar</button>
+                </div>
+                <div id="listaComentarios-2">
+                    <div style="color: #666; font-size: 12px; text-align: center;">Cargando comentarios...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE CONEXIÓN ONLINE CON JSONBIN -->
+    <script>
+        const BIN_ID = "6abf3053ac6210605a0b2fcb";
+        const API_KEY = "$2a$10$z3DhQyCTFmDXTsISGRmSi.lHdT.HYFg9i4jUsZvC9IKUHr2qewG4e";
+        
+        let datosGlobales = {
+            video1: { likes: 0, comentarios: [] },
+            video2: { likes: 0, comentarios: [] }
+        };
+        let esAdmin = false;
+        let miIdUsuario = localStorage.getItem('fiscal_user_id') || 'user_' + Math.random().toString(36.substr(2, 9));
+        localStorage.setItem('fiscal_user_id', miIdUsuario);
+
+        function cargarDatosNube() {
+            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': API_KEY }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.record && data.record.video1) {
+                    datosGlobales = data.record;
+                }
+                renderizarTodo();
+            })
+            .catch(err => console.error("Error al sincronizar:", err));
+        }
+
+        function guardarDatosNube() {
+            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': API_KEY
+                },
+                body: JSON.stringify(datosGlobales)
+            })
+            .then(res => res.json())
+            .then(() => renderizarTodo())
+            .catch(err => alert('Error al guardar en línea.'));
+        }
+
+        function renderizarTodo() {
+            document.getElementById('likeCount-1').innerText = datosGlobales.video1.likes;
+            document.getElementById('commentCount-1').innerText = datosGlobales.video1.comentarios.length;
+            renderizarListaComentarios('video1', datosGlobales.video1.comentarios, 'listaComentarios-1');
+
+            document.getElementById('likeCount-2').innerText = datosGlobales.video2.likes;
+            document.getElementById('commentCount-2').innerText = datosGlobales.video2.comentarios.length;
+            renderizarListaComentarios('video2', datosGlobales.video2.comentarios, 'listaComentarios-2');
+        }
+
+        function renderizarListaComentarios(videoId, comentarios, elementId) {
+            let contenedor = document.getElementById(elementId);
+            contenedor.innerHTML = '';
+
+            if (comentarios.length === 0) {
+                contenedor.innerHTML = '<div style="color: #666; font-size: 12px; text-align: center; padding: 5px;">Sé el primero en comentar...</div>';
+                return;
+            }
+
+            comentarios.forEach((c, index) => {
+                let div = document.createElement('div');
+                div.className = 'comment-item';
+                
+                let esDueño = (c.userId === miIdUsuario);
+                let badgeAdmin = c.esAdmin ? '<span class="admin-badge">Admin</span>' : '';
+
+                div.innerHTML = `
+                    <div><strong>@${c.autor}</strong> ${badgeAdmin}</div>
+                    <div style="margin-top: 4px; color: #ddd;" id="texto-c-${videoId}-${index}">${c.texto}</div>
+                    <div class="comment-actions">
+                        ${(esDueño && !c.esAdmin) ? `<span onclick="editarComentario('${videoId}',${index})">Editar</span>` : ''}
+                        {(esDueño || esAdmin) ? `<span style="color: #ff4444;" onclick="eliminarComentario('${videoId}',${index})">Eliminar</span>` : ''}
+                    </div>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        function darLike(videoId) {
+            datosGlobales[videoId].likes++;
+            guardarDatosNube();
+        }
+
+        function agregarComentario(videoId) {
+            let inputNombre = document.getElementById(`nombreUser-${videoId === 'video1' ? '1' : '2'}`);
+            let inputTexto = document.getElementById(`textoComment-${videoId === 'video1' ? '1' : '2'}`);
+            
+            let autor = inputNombre.value.trim() || "Anónimo";
+            let texto = inputTexto.value.trim();
+
+            if (!texto) return;
+
+            let nuevoComentario = {
+                autor: autor,
+                texto: texto,
+                userId: miIdUsuario,
+                esAdmin: esAdmin
+            };
+
+            datosGlobales[videoId].comentarios.unshift(nuevoComentario);
+            inputTexto.value = '';
+            guardarDatosNube();
+        }
+
+        function eliminarComentario(videoId, index) {
+            if (confirm("¿Seguro que deseas eliminar este comentario?")) {
+                datosGlobales[videoId].comentarios.splice(index, 1);
+                guardarDatosNube();
+            }
+        }
+
+        function editarComentario(videoId, index) {
+            let nuevoTexto = prompt("Edita tu comentario:", datosGlobales[videoId].comentarios[index].texto);
+            if (nuevoTexto !== null && nuevoTexto.trim() !== "") {
+                datosGlobales[videoId].comentarios[index].texto = nuevoTexto.trim();
+                guardarDatosNube();
+            }
+        }
+
+        function activarAdmin() {
+            let pass = prompt("Introduce la contraseña de administrador:");
+            if (pass === "007") {
+                esAdmin = true;
+                alert("¡Modo Administrador activado con éxito!");
+                renderizarTodo();
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta.");
+            }
+        }
+
+        function compartirWeb() {
+            if (navigator.share) {
+                navigator.share({ title: document.title, url: window.location.href }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert("¡Enlace de la web copiado al portapapeles!");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", cargarDatosNube);
+    </script>
+</body>
+</html>
